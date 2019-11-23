@@ -73,10 +73,18 @@ class ComponentScanAnnotationParser {
 	}
 
 
+	/**
+	 * ComponentScanAnnotationParser ComponentScan注解解析器
+	 * @param componentScan
+	 * @param declaringClass
+	 * @return
+	 */
 	public Set<BeanDefinitionHolder> parse(AnnotationAttributes componentScan, final String declaringClass) {
 		Assert.state(this.environment != null, "Environment must not be null");
 		Assert.state(this.resourceLoader != null, "ResourceLoader must not be null");
 
+		// 一个bean定义扫描程序，用于检测类路径上的bean候选者
+		// 下面根据@ComponentScan的属性配置scanner
 		ClassPathBeanDefinitionScanner scanner = new ClassPathBeanDefinitionScanner(this.registry,
 				componentScan.getBoolean("useDefaultFilters"), this.environment, this.resourceLoader);
 
@@ -132,6 +140,8 @@ class ComponentScanAnnotationParser {
 				return declaringClass.equals(className);
 			}
 		});
+
+		// 在给定的base packages内执行扫描，返回注册好的bean定义
 		return scanner.doScan(StringUtils.toStringArray(basePackages));
 	}
 

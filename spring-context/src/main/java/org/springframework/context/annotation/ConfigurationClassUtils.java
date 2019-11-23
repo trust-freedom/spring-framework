@@ -83,6 +83,7 @@ abstract class ConfigurationClassUtils {
 			return false;
 		}
 
+		//1、获取AnnotationMetadata注解元数据
 		AnnotationMetadata metadata;
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
@@ -108,7 +109,8 @@ abstract class ConfigurationClassUtils {
 			}
 		}
 
-		if (isFullConfigurationCandidate(metadata)) {
+		//2、根据元数据判断是full或者lite的配置类，都不是返回false
+		if (isFullConfigurationCandidate(metadata)) { //是不是有@Configuration
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
 		else if (isLiteConfigurationCandidate(metadata)) {
@@ -119,6 +121,7 @@ abstract class ConfigurationClassUtils {
 		}
 
 		// It's a full or lite configuration candidate... Let's determine the order value, if any.
+		//3、是full或lite配置了，决定顺序值，如果有的话
 		Map<String, Object> orderAttributes = metadata.getAnnotationAttributes(Order.class.getName());
 		if (orderAttributes != null) {
 			beanDef.setAttribute(ORDER_ATTRIBUTE, orderAttributes.get(AnnotationUtils.VALUE));
@@ -159,11 +162,14 @@ abstract class ConfigurationClassUtils {
 	 */
 	public static boolean isLiteConfigurationCandidate(AnnotationMetadata metadata) {
 		// Do not consider an interface or an annotation...
+		// 1、不考虑接口或注解，返回false
 		if (metadata.isInterface()) {
 			return false;
 		}
 
 		// Any of the typical annotations found?
+		// 2、是否有以下其中一个注解
+		// candidateIndicators包括：@Component、@ComponentScan、@Import、@ImportResource
 		for (String indicator : candidateIndicators) {
 			if (metadata.isAnnotated(indicator)) {
 				return true;
@@ -171,6 +177,7 @@ abstract class ConfigurationClassUtils {
 		}
 
 		// Finally, let's look for @Bean methods...
+		// 3、是否有被@Bean的method
 		try {
 			return metadata.hasAnnotatedMethods(Bean.class.getName());
 		}

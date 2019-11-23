@@ -76,11 +76,12 @@ public interface ConfigurableBeanFactory extends HierarchicalBeanFactory, Single
 	void setParentBeanFactory(BeanFactory parentBeanFactory) throws IllegalStateException;
 
 	/**
-	 * Set the class loader to use for loading bean classes.
-	 * Default is the thread context class loader.
+	 * Set the class loader to use for loading bean classes.  设置类加载器以用于加载bean类
+	 * Default is the thread context class loader.  默认是线程上下文类加载器
 	 * <p>Note that this class loader will only apply to bean definitions
-	 * that do not carry a resolved bean class yet. This is the case as of
-	 * Spring 2.0 by default: Bean definitions only carry bean class names,
+	 * that do not carry a resolved bean class yet.
+	 * 请注意，此类加载器仅适用于尚未带有已解析bean类的bean定义
+	 * This is the case as of Spring 2.0 by default: Bean definitions only carry bean class names,
 	 * to be resolved once the factory processes the bean definition.
 	 * @param beanClassLoader the class loader to use,
 	 * or {@code null} to suggest the default class loader
@@ -127,7 +128,9 @@ public interface ConfigurableBeanFactory extends HierarchicalBeanFactory, Single
 
 	/**
 	 * Specify the resolution strategy for expressions in bean definition values.
+	 * 为bean定义的value中的表达式指定解析策略
 	 * <p>There is no expression support active in a BeanFactory by default.
+	 * 默认不支持表达式
 	 * An ApplicationContext will typically set a standard expression strategy
 	 * here, supporting "#{...}" expressions in a Unified EL compatible style.
 	 * @since 3.0

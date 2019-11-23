@@ -58,7 +58,17 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
 	public AnnotationConfigApplicationContext() {
+		/**
+		 * 基于注解的Bean定义reader（其中会获取Environment，没有就创建一个StandardEnvironment）
+		 *
+		 * 最内层的构造会调用：AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry)
+		 * 在给定的registry中注册注解相关的后置处理器，即
+		 */
 		this.reader = new AnnotatedBeanDefinitionReader(this);
+
+		/**
+		 * classpath的Bean定义扫描器（其中会获取Environment，没有就创建一个StandardEnvironment）
+		 */
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 
@@ -79,8 +89,26 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * e.g. {@link Configuration @Configuration} classes
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... annotatedClasses) {
-		this();
+		this(); //调用无参构造，会创建AnnotatedBeanDefinitionReader和ClassPathBeanDefinitionScanner
+		        //由于是GenericApplicationContext的子类，且GenericApplicationContext的无参构造会创建BeanFactory（DefaultListableBeanFactory）
+
 		register(annotatedClasses);
+
+		/**
+		 * 刷新容器
+		 * 本次debug AnnotationConfigApplicationContext，此时内部BeanFactory有7个beanDefinition
+		 *
+		 * 基础组件，注解相关的后置处理器
+		 * 0 = "org.springframework.context.annotation.internalConfigurationAnnotationProcessor"
+		 * 1 = "org.springframework.context.annotation.internalAutowiredAnnotationProcessor"
+		 * 2 = "org.springframework.context.annotation.internalRequiredAnnotationProcessor"
+		 * 3 = "org.springframework.context.annotation.internalCommonAnnotationProcessor"
+		 * 4 = "org.springframework.context.event.internalEventListenerProcessor"
+		 * 5 = "org.springframework.context.event.internalEventListenerFactory"
+		 *
+		 * @Configuration配置类
+		 * 6 = "extConfig"
+		 */
 		refresh();
 	}
 
@@ -148,6 +176,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 
 	/**
 	 * Register one or more annotated classes to be processed.
+	 * 注册一个或多个要处理的带@Configuration注解的类，即配置类
 	 * <p>Note that {@link #refresh()} must be called in order for the context
 	 * to fully process the new classes.
 	 * @param annotatedClasses one or more annotated classes,

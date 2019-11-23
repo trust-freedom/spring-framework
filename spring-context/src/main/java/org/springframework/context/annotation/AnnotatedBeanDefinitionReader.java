@@ -30,7 +30,7 @@ import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.Assert;
 
 /**
- * Convenient adapter for programmatic registration of annotated bean classes.
+ * Convenient adapter for programmatic registration of annotated bean classes. 方便的适配器，用于注解bean类的编程注册
  * This is an alternative to {@link ClassPathBeanDefinitionScanner}, applying
  * the same resolution of annotations but for explicitly registered classes only.
  *
@@ -80,6 +80,8 @@ public class AnnotatedBeanDefinitionReader {
 		Assert.notNull(environment, "Environment must not be null");
 		this.registry = registry;
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
+
+		//在给定的registry中注册注解相关的后置处理器
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 	}
 
@@ -189,7 +191,7 @@ public class AnnotatedBeanDefinitionReader {
 
 		BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(abd, beanName);
 		definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
-		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);
+		BeanDefinitionReaderUtils.registerBeanDefinition(definitionHolder, this.registry);  //注册当前@COnfiguration配置类的bean定义
 	}
 
 

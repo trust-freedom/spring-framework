@@ -113,7 +113,7 @@ class ConfigurationClassBeanDefinitionReader {
 	public void loadBeanDefinitions(Set<ConfigurationClass> configurationModel) {
 		TrackedConditionEvaluator trackedConditionEvaluator = new TrackedConditionEvaluator();
 		for (ConfigurationClass configClass : configurationModel) {
-			loadBeanDefinitionsForConfigurationClass(configClass, trackedConditionEvaluator);
+			loadBeanDefinitionsForConfigurationClass(configClass, trackedConditionEvaluator);//加载每一个配置类的bean定义
 		}
 	}
 
@@ -124,6 +124,8 @@ class ConfigurationClassBeanDefinitionReader {
 	private void loadBeanDefinitionsForConfigurationClass(
 			ConfigurationClass configClass, TrackedConditionEvaluator trackedConditionEvaluator) {
 
+		//根据跟踪条件计算器判断，是否应该跳过此配置类
+		//大概是说，Import当前配置类的配置类是否应该skip
 		if (trackedConditionEvaluator.shouldSkip(configClass)) {
 			String beanName = configClass.getBeanName();
 			if (StringUtils.hasLength(beanName) && this.registry.containsBeanDefinition(beanName)) {
@@ -133,9 +135,13 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
+		//不用skip，当前配置类是否是被Import的
+		//如果是，为导入的配置类注册bean定义
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
+
+		//遍历配置类的method
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
@@ -171,11 +177,12 @@ class ConfigurationClassBeanDefinitionReader {
 	 * with the BeanDefinitionRegistry based on its contents.
 	 */
 	private void loadBeanDefinitionsForBeanMethod(BeanMethod beanMethod) {
-		ConfigurationClass configClass = beanMethod.getConfigurationClass();
+		ConfigurationClass configClass = beanMethod.getConfigurationClass();//method所在的配置类
 		MethodMetadata metadata = beanMethod.getMetadata();
 		String methodName = metadata.getMethodName();
 
 		// Do we need to mark the bean as skipped by its condition?
+		// 根据条件计算器，判断当前method是否需要跳过
 		if (this.conditionEvaluator.shouldSkip(metadata, ConfigurationPhase.REGISTER_BEAN)) {
 			configClass.skippedBeanMethods.add(methodName);
 			return;
@@ -185,9 +192,9 @@ class ConfigurationClassBeanDefinitionReader {
 		}
 
 		// Consider name and any aliases
-		AnnotationAttributes bean = AnnotationConfigUtils.attributesFor(metadata, Bean.class);
-		List<String> names = new ArrayList<String>(Arrays.asList(bean.getStringArray("name")));
-		String beanName = (!names.isEmpty() ? names.remove(0) : methodName);
+		AnnotationAttributes bean = AnnotationConfigUtils.attributesFor(metadata, Bean.class);//@Bean注解的属性
+		List<String> names = new ArrayList<String>(Arrays.asList(bean.getStringArray("name")));//@Bean注解的name属性
+		String beanName = (!names.isEmpty() ? names.remove(0) : methodName);//判断beanName（如果names不为空，就用names第一个，否则用methodName）
 
 		// Register aliases even when overridden
 		for (String alias : names) {
@@ -204,6 +211,8 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
+		//RootBeanDefinition的子类，用于标示是从配置类创建的bean定义（当前@Bean的bean定义）
+		//下面开始设置beanDef
 		ConfigurationClassBeanDefinition beanDef = new ConfigurationClassBeanDefinition(configClass, metadata);
 		beanDef.setResource(configClass.getResource());
 		beanDef.setSource(this.sourceExtractor.extractSource(metadata, configClass.getResource()));
@@ -264,6 +273,7 @@ class ConfigurationClassBeanDefinitionReader {
 					configClass.getMetadata().getClassName(), beanName));
 		}
 
+		//注册bean定义
 		this.registry.registerBeanDefinition(beanName, beanDefToRegister);
 	}
 
@@ -365,8 +375,10 @@ class ConfigurationClassBeanDefinitionReader {
 	/**
 	 * {@link RootBeanDefinition} marker subclass used to signify that a bean definition
 	 * was created from a configuration class as opposed to any other configuration source.
+	 * {@link RootBeanDefinition}标记子类用于表示从配置类创建bean定义，而不是任何其他配置源
 	 * Used in bean overriding cases where it's necessary to determine whether the bean
 	 * definition was created externally.
+	 * 用于bean重写的情况，需要确定bean定义是否是在外部创建的
 	 */
 	@SuppressWarnings("serial")
 	private static class ConfigurationClassBeanDefinition extends RootBeanDefinition implements AnnotatedBeanDefinition {

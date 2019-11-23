@@ -120,6 +120,8 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @see #registerDefaultFilters()
 	 */
 	public ClassPathScanningCandidateComponentProvider(boolean useDefaultFilters, Environment environment) {
+		//如果useDefaultFilters属性为true，注册默认的filter
+		//其中包含扫描@Component的inclue filter
 		if (useDefaultFilters) {
 			registerDefaultFilters();
 		}
@@ -170,9 +172,9 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	}
 
 	/**
-	 * Register the default filter for {@link Component @Component}.
-	 * <p>This will implicitly register all annotations that have the
-	 * {@link Component @Component} meta-annotation including the
+	 * Register the default filter for {@link Component @Component}.  注册@Component注解包含过滤器
+	 * <p>This will implicitly register all annotations that have the  这将隐式的注册@Repository、@Service、@Controller
+	 * {@link Component @Component} meta-annotation including the      因为这3个注解上都有@Component
 	 * {@link Repository @Repository}, {@link Service @Service}, and
 	 * {@link Controller @Controller} stereotype annotations.
 	 * <p>Also supports Java EE 6's {@link javax.annotation.ManagedBean} and
@@ -181,7 +183,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 */
 	@SuppressWarnings("unchecked")
 	protected void registerDefaultFilters() {
-		this.includeFilters.add(new AnnotationTypeFilter(Component.class));
+		this.includeFilters.add(new AnnotationTypeFilter(Component.class)); //注册默认的包含filter，过滤有@Component
 		ClassLoader cl = ClassPathScanningCandidateComponentProvider.class.getClassLoader();
 		try {
 			this.includeFilters.add(new AnnotationTypeFilter(
@@ -267,6 +269,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 
 	/**
 	 * Scan the class path for candidate components.
+	 * 扫描类路径下的候选组件【classpath*:basePackage/xxx.class】
 	 * @param basePackage the package to check for annotated classes
 	 * @return a corresponding Set of autodetected bean definitions
 	 */
@@ -274,7 +277,7 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 		Set<BeanDefinition> candidates = new LinkedHashSet<BeanDefinition>();
 		try {
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
-					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
+					resolveBasePackage(basePackage) + '/' + this.resourcePattern;  //classpath*:basePackage/xxx.class
 			Resource[] resources = this.resourcePatternResolver.getResources(packageSearchPath);
 			boolean traceEnabled = logger.isTraceEnabled();
 			boolean debugEnabled = logger.isDebugEnabled();
@@ -285,8 +288,11 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 				if (resource.isReadable()) {
 					try {
 						MetadataReader metadataReader = this.metadataReaderFactory.getMetadataReader(resource);
+
+						//是否是候选的组件
+						//会遍历所有的excludeFilters 和 includeFilters（默认的includeFilter会扫描@Component）
 						if (isCandidateComponent(metadataReader)) {
-							ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
+							ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);//创建扫描通用bean定义
 							sbd.setResource(resource);
 							sbd.setSource(resource);
 							if (isCandidateComponent(sbd)) {
@@ -345,16 +351,20 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @return whether the class qualifies as a candidate component
 	 */
 	protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
+		// 遍历所有排除Filter
 		for (TypeFilter tf : this.excludeFilters) {
 			if (tf.match(metadataReader, this.metadataReaderFactory)) {
 				return false;
 			}
 		}
+
+		// 遍历所有包含Filter
 		for (TypeFilter tf : this.includeFilters) {
 			if (tf.match(metadataReader, this.metadataReaderFactory)) {
-				return isConditionMatch(metadataReader);
+				return isConditionMatch(metadataReader); //@Conditional是否匹配
 			}
 		}
+
 		return false;
 	}
 

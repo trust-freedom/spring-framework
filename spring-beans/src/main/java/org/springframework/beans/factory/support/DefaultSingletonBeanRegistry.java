@@ -124,18 +124,25 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	@Override
 	public void registerSingleton(String beanName, Object singletonObject) throws IllegalStateException {
 		Assert.notNull(beanName, "'beanName' must not be null");
+
+		//对singletonObjects这个ConcurrentHashMap<String, Object>加锁
 		synchronized (this.singletonObjects) {
 			Object oldObject = this.singletonObjects.get(beanName);
+
+			//如果singletonObjects缓存中已经有这个beanName实例，抛异常，单例不能注册第二个
 			if (oldObject != null) {
 				throw new IllegalStateException("Could not register object [" + singletonObject +
 						"] under bean name '" + beanName + "': there is already object [" + oldObject + "] bound");
 			}
+
+			//oldObject==null，给定单实例对象添加到当前beanFactory的相关单实例缓存中
 			addSingleton(beanName, singletonObject);
 		}
 	}
 
 	/**
 	 * Add the given singleton object to the singleton cache of this factory.
+	 * 将给定单实例对象添加到当前beanFactory的相关单实例缓存中
 	 * <p>To be called for eager registration of singletons.
 	 * @param beanName the name of the bean
 	 * @param singletonObject the singleton object
@@ -227,7 +234,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					this.suppressedExceptions = new LinkedHashSet<Exception>();
 				}
 				try {
-					singletonObject = singletonFactory.getObject();
+					singletonObject = singletonFactory.getObject(); //调用工厂的getObject()创建bean
 					newSingleton = true;
 				}
 				catch (IllegalStateException ex) {
@@ -253,7 +260,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					afterSingletonCreation(beanName);
 				}
 				if (newSingleton) {
-					addSingleton(beanName, singletonObject);
+					addSingleton(beanName, singletonObject); //将给定单实例对象添加到当前beanFactory的相关单实例缓存中
 				}
 			}
 			return (singletonObject != NULL_OBJECT ? singletonObject : null);

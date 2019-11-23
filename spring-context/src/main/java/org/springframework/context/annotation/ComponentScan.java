@@ -30,11 +30,14 @@ import org.springframework.core.type.filter.TypeFilter;
 /**
  * Configures component scanning directives for use with @{@link Configuration} classes.
  * Provides support parallel with Spring XML's {@code <context:component-scan>} element.
+ * 提供与Spring XML的{@code <context：component-scan>}元素并行的支持
  *
  * <p>Either {@link #basePackageClasses} or {@link #basePackages} (or its alias
  * {@link #value}) may be specified to define specific packages to scan. If specific
  * packages are not defined, scanning will occur from the package of the
  * class that declares this annotation.
+ * 可以指定{@link #basePackageClasses}或{@link #basePackages}（或其别名{@link #value}）来定义要扫描的特定包
+ * 如果未定义特定包，则将从声明此批注的类的包进行扫描
  *
  * <p>Note that the {@code <context:component-scan>} element has an
  * {@code annotation-config} attribute; however, this annotation does not. This is because
@@ -43,6 +46,8 @@ import org.springframework.core.type.filter.TypeFilter;
  * when using {@link AnnotationConfigApplicationContext}, annotation config processors are
  * always registered, meaning that any attempt to disable them at the
  * {@code @ComponentScan} level would be ignored.
+ * 请注意，{@ code <context：component-scan>}元素具有{@code annotation-config}属性; 但是，这个注释没有
+ * 这是因为在使用{@code @ComponentScan}的几乎所有情况下，都假定默认注释配置处理
  *
  * <p>See {@link Configuration @Configuration}'s Javadoc for usage examples.
  *

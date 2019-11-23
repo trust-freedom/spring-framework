@@ -146,6 +146,9 @@ public interface ListableBeanFactory extends BeanFactory {
 	 * Return the names of beans matching the given type (including subclasses),
 	 * judging from either bean definitions or the value of {@code getObjectType}
 	 * in the case of FactoryBeans.
+	 * 返回与给定类型匹配的bean的名称（包括子类），
+	 * 在FactoryBeans的情况下，从bean定义 或 FactoryBean#getObjectType()的值来判断
+	 *
 	 * <p><b>NOTE: This method introspects top-level beans only.</b> It does <i>not</i>
 	 * check nested beans which might match the specified type as well.
 	 * <p>Does consider objects created by FactoryBeans if the "allowEagerInit" flag is set,
@@ -156,8 +159,11 @@ public interface ListableBeanFactory extends BeanFactory {
 	 * <p>Does not consider any hierarchy this factory may participate in.
 	 * Use BeanFactoryUtils' {@code beanNamesForTypeIncludingAncestors}
 	 * to include beans in ancestor factories too.
+	 *
 	 * <p>Note: Does <i>not</i> ignore singleton beans that have been registered
 	 * by other means than bean definitions.
+	 * 不要忽略通过bean定义以外的其他方式注册的单例bean
+	 *
 	 * <p>Bean names returned by this method should always return bean names <i>in the
 	 * order of definition</i> in the backend configuration, as far as possible.
 	 * @param type the class or interface to match, or {@code null} for all bean names

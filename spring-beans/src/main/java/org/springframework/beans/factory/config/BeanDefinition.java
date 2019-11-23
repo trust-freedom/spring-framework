@@ -24,10 +24,13 @@ import org.springframework.core.AttributeAccessor;
  * A BeanDefinition describes a bean instance, which has property values,
  * constructor argument values, and further information supplied by
  * concrete implementations.
+ * BeanDefinition描述了一个bean实例，它具有属性值，构造函数参数值以及具体实现提供的更多信息
  *
  * <p>This is just a minimal interface: The main intention is to allow a
  * {@link BeanFactoryPostProcessor} such as {@link PropertyPlaceholderConfigurer}
  * to introspect and modify property values and other bean metadata.
+ * 这只是一个最小的接口：主要目的是允许{@link BeanFactoryPostProcessor}
+ * （如{@link PropertyPlaceholderConfigurer}）内省并修改属性值和其他bean元数据
  *
  * @author Juergen Hoeller
  * @author Rob Harrop
@@ -207,17 +210,21 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 
 	/**
 	 * Return the constructor argument values for this bean.
+	 * 返回此bean的构造函数参数值
 	 * <p>The returned instance can be modified during bean factory post-processing.
+	 * 可以在bean工厂后处理期间修改返回的实例
 	 * @return the ConstructorArgumentValues object (never {@code null})
 	 */
 	ConstructorArgumentValues getConstructorArgumentValues();
 
 	/**
 	 * Return the property values to be applied to a new instance of the bean.
+	 * 返回要应用于bean的新实例的属性值
 	 * <p>The returned instance can be modified during bean factory post-processing.
+	 * 可以在bean工厂后处理期间修改返回的实例
 	 * @return the MutablePropertyValues object (never {@code null})
 	 */
-	MutablePropertyValues getPropertyValues();
+	MutablePropertyValues getPropertyValues();  //bean定义是包含设置好的参数值的！！
 
 
 	// Read-only attributes

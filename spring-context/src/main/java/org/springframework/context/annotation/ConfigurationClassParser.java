@@ -159,14 +159,18 @@ class ConfigurationClassParser {
 	}
 
 
+	/**
+	 * 解析@COnfiguration配置类（重点方法）
+	 * @param configCandidates
+	 */
 	public void parse(Set<BeanDefinitionHolder> configCandidates) {
 		this.deferredImportSelectors = new LinkedList<DeferredImportSelectorHolder>();
 
 		for (BeanDefinitionHolder holder : configCandidates) {
 			BeanDefinition bd = holder.getBeanDefinition();
 			try {
-				if (bd instanceof AnnotatedBeanDefinition) {
-					parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());
+				if (bd instanceof AnnotatedBeanDefinition) { //本次debug进入这个分支
+					parse(((AnnotatedBeanDefinition) bd).getMetadata(), holder.getBeanName());//解析(参数：metadata元数据、beanName)
 				}
 				else if (bd instanceof AbstractBeanDefinition && ((AbstractBeanDefinition) bd).hasBeanClass()) {
 					parse(((AbstractBeanDefinition) bd).getBeanClass(), holder.getBeanName());
@@ -184,6 +188,7 @@ class ConfigurationClassParser {
 			}
 		}
 
+		//应该是处理ImportSelectors
 		processDeferredImportSelectors();
 	}
 
@@ -193,7 +198,7 @@ class ConfigurationClassParser {
 	}
 
 	protected final void parse(Class<?> clazz, String beanName) throws IOException {
-		processConfigurationClass(new ConfigurationClass(clazz, beanName));
+		processConfigurationClass(new ConfigurationClass(clazz, beanName)); //根据StandardAnnotationMetadata和beanName创建的ConfigurationClass
 	}
 
 	protected final void parse(AnnotationMetadata metadata, String beanName) throws IOException {
@@ -215,15 +220,22 @@ class ConfigurationClassParser {
 	}
 
 
+	/**
+	 * 处理配置类的核心方法
+	 * @param configClass  根据StandardAnnotationMetadata和beanName创建的ConfigurationClass
+	 * @throws IOException
+	 */
 	protected void processConfigurationClass(ConfigurationClass configClass) throws IOException {
+		// 调用conditionEvaluator条件计算器
+		// 判断配置类是否使用@Conditional注解，如果使用了，根据其配置的Condition实现类判断是否match，是否需要跳过此配置
 		if (this.conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.PARSE_CONFIGURATION)) {
 			return;
 		}
 
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
 		if (existingClass != null) {
-			if (configClass.isImported()) {
-				if (existingClass.isImported()) {
+			if (configClass.isImported()) { //当前配置类是被Import的（当前配置类是否通过@Import注册 或 由于内嵌于另一个配置类而被自动注册）
+				if (existingClass.isImported()) { //已存在的配置类也是呗Import的
 					existingClass.mergeImportedBy(configClass);
 				}
 				// Otherwise ignore new imported config class; existing non-imported class overrides it.
@@ -266,6 +278,7 @@ class ConfigurationClassParser {
 		processMemberClasses(configClass, sourceClass);
 
 		// Process any @PropertySource annotations
+		// 处理@PropertySource注解
 		for (AnnotationAttributes propertySource : AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), PropertySources.class,
 				org.springframework.context.annotation.PropertySource.class)) {
@@ -279,14 +292,31 @@ class ConfigurationClassParser {
 		}
 
 		// Process any @ComponentScan annotations
+		// 处理@ComponentScan注解
 		Set<AnnotationAttributes> componentScans = AnnotationConfigUtils.attributesForRepeatable(
 				sourceClass.getMetadata(), ComponentScans.class, ComponentScan.class);
 		if (!componentScans.isEmpty() &&
 				!this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
+
+			// AnnotationAttributes是个LinkedHashMap
+			// componentScan = {AnnotationAttributes@1477}  size = 11
+			//   0 = {LinkedHashMap$Entry@1495} "value" ->
+			//   1 = {LinkedHashMap$Entry@1496} "basePackageClasses" ->
+			//   2 = {LinkedHashMap$Entry@1497} "basePackages" ->
+			//   3 = {LinkedHashMap$Entry@1498} "nameGenerator" -> "interface org.springframework.beans.factory.support.BeanNameGenerator"
+			//   4 = {LinkedHashMap$Entry@1499} "scopeResolver" -> "class org.springframework.context.annotation.AnnotationScopeMetadataResolver"
+			//   5 = {LinkedHashMap$Entry@1500} "scopedProxy" -> "DEFAULT"
+			//   6 = {LinkedHashMap$Entry@1501} "lazyInit" -> "false"
+			//   7 = {LinkedHashMap$Entry@1502} "useDefaultFilters" -> "true"
+			//   8 = {LinkedHashMap$Entry@1503} "resourcePattern" -> "**/*.class"
+			//   9 = {LinkedHashMap$Entry@1504} "includeFilters" ->
+			//   10 = {LinkedHashMap$Entry@1505} "excludeFilters" ->
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
+				// 立即执行扫描 ComponentScanAnnotationParser#parse()
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
+
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
 				for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
 					BeanDefinition bdCand = holder.getBeanDefinition().getOriginatingBeanDefinition();
@@ -301,9 +331,11 @@ class ConfigurationClassParser {
 		}
 
 		// Process any @Import annotations
+		// 处理@Import注解
 		processImports(configClass, sourceClass, getImports(sourceClass), true);
 
 		// Process any @ImportResource annotations
+		// 处理@ImportResource注解
 		if (sourceClass.getMetadata().isAnnotated(ImportResource.class.getName())) {
 			AnnotationAttributes importResource =
 					AnnotationConfigUtils.attributesFor(sourceClass.getMetadata(), ImportResource.class);
@@ -316,6 +348,7 @@ class ConfigurationClassParser {
 		}
 
 		// Process individual @Bean methods
+		// 处理各个@Bean方法
 		Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
 		for (MethodMetadata methodMetadata : beanMethods) {
 			configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));

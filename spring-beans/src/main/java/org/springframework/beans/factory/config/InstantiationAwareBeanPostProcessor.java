@@ -25,6 +25,8 @@ import org.springframework.beans.PropertyValues;
  * Subinterface of {@link BeanPostProcessor} that adds a before-instantiation callback,
  * and a callback after instantiation but before explicit properties are set or
  * autowiring occurs.
+ * BeanPostProcessor的子接口，添加一个before-instantiation(实例化)的回调
+ * 这个回调实在实例化之后，显示的属性设置或自动装配发生之前
  *
  * <p>Typically used to suppress default instantiation for specific target beans,
  * for example to create proxies with special TargetSources (pooling targets,

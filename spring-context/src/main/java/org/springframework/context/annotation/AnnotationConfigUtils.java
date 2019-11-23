@@ -128,6 +128,7 @@ public class AnnotationConfigUtils {
 
 	/**
 	 * Register all relevant annotation post processors in the given registry.
+	 * 在给定的registry中注册注解相关的后置处理器
 	 * @param registry the registry to operate on
 	 */
 	public static void registerAnnotationConfigProcessors(BeanDefinitionRegistry registry) {
@@ -136,6 +137,8 @@ public class AnnotationConfigUtils {
 
 	/**
 	 * Register all relevant annotation post processors in the given registry.
+	 * 在给定的registry中注册注解相关的后置处理器
+	 *
 	 * @param registry the registry to operate on
 	 * @param source the configuration source element (already extracted)
 	 * that this registration was triggered from. May be {@code null}.
@@ -155,26 +158,52 @@ public class AnnotationConfigUtils {
 			}
 		}
 
+		//BeanDefinitionHolder的集合，好像创建了BeanDefinition之后都要new BeanDefinitionHolder(definition, beanName)
 		Set<BeanDefinitionHolder> beanDefs = new LinkedHashSet<BeanDefinitionHolder>(4);
 
+		/**
+		 * 如果没有名为org.springframework.context.annotation.internalConfigurationAnnotationProcessor的bean定义，则创建一个ConfigurationClassPostProcessor
+		 * ConfigurationClassPostProcessor是一个BeanDefinitionRegistryPostProcessor，PriorityOrdered
+		 * 用于启动注解类相关的程序，重点是postProcessBeanDefinitionRegistry()中调用了ConfigurationClassParser#parser()-->doProcessConfigurationClass()
+		 * 其中处理了@ComponentScan、@Bean、@PropertySource、@Import、@ImportResource等注解
+		 * 其中处理@ComponentScan是会进行beanDefinition的注册
+		 * ... TODO
+		 * 故执行这个BeanDefinitionRegistryPostProcessor后置处理器的时候就会注册bean定义
+		 */
 		if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);
 			def.setSource(source);
-			beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
+			beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));//注册后置处理器（注册bean定义，bean定义的角色是基础设施，返回BeanDefinitionHolder）
 		}
 
+		/**
+		 * 如果没有名为org.springframework.context.annotation.internalAutowiredAnnotationProcessor的bean定义，则创建一个AutowiredAnnotationBeanPostProcessor
+		 * AutowiredAnnotationBeanPostProcessor是一个MergedBeanDefinitionPostProcessor, PriorityOrdered
+		 * 应该是处理@Autowaired相关的 TODO
+		 *
+		 */
 		if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		/**
+		 * 如果没有名为org.springframework.context.annotation.internalRequiredAnnotationProcessor的bean定义，则创建一个RequiredAnnotationBeanPostProcessor
+		 * RequiredAnnotationBeanPostProcessor是一个MergedBeanDefinitionPostProcessor, PriorityOrdered
+		 *
+		 */
 		if (!registry.containsBeanDefinition(REQUIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(RequiredAnnotationBeanPostProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, REQUIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		/**
+		 * 如果没有名为org.springframework.context.annotation.internalCommonAnnotationProcessor的bean定义，则创建一个CommonAnnotationBeanPostProcessor
+		 * CommonAnnotationBeanPostProcessor是一个InstantiationAwareBeanPostProcessor，DestructionAwareBeanPostProcessor, MergedBeanDefinitionPostProcessor, PriorityOrdered
+		 *
+		 */
 		// Check for JSR-250 support, and if present add the CommonAnnotationBeanPostProcessor.
 		if (jsr250Present && !registry.containsBeanDefinition(COMMON_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(CommonAnnotationBeanPostProcessor.class);
@@ -197,11 +226,22 @@ public class AnnotationConfigUtils {
 			beanDefs.add(registerPostProcessor(registry, def, PERSISTENCE_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		/**
+		 * 如果没有名为org.springframework.context.event.internalEventListenerProcessor的bean定义，则创建一个EventListenerMethodProcessor
+		 * EventListenerMethodProcessor是一个SmartInitializingSingleton, ApplicationContextAware
+		 *
+		 */
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_PROCESSOR_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(EventListenerMethodProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, EVENT_LISTENER_PROCESSOR_BEAN_NAME));
 		}
+
+		/**
+		 * 如果没有名为org.springframework.context.event.internalEventListenerFactory的bean定义，则创建一个DefaultEventListenerFactory
+		 * DefaultEventListenerFactory是一个EventListenerFactory, Ordered
+		 *
+		 */
 		if (!registry.containsBeanDefinition(EVENT_LISTENER_FACTORY_BEAN_NAME)) {
 			RootBeanDefinition def = new RootBeanDefinition(DefaultEventListenerFactory.class);
 			def.setSource(source);
@@ -214,7 +254,7 @@ public class AnnotationConfigUtils {
 	private static BeanDefinitionHolder registerPostProcessor(
 			BeanDefinitionRegistry registry, RootBeanDefinition definition, String beanName) {
 
-		definition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
+		definition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);//bean定义的角色是基础设施
 		registry.registerBeanDefinition(beanName, definition);
 		return new BeanDefinitionHolder(definition, beanName);
 	}

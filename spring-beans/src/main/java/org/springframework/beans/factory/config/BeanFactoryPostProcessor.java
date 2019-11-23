@@ -45,10 +45,21 @@ import org.springframework.beans.BeansException;
 public interface BeanFactoryPostProcessor {
 
 	/**
-	 * Modify the application context's internal bean factory after its standard
-	 * initialization. All bean definitions will have been loaded, but no beans
-	 * will have been instantiated yet. This allows for overriding or adding
-	 * properties even to eager-initializing beans.
+	 * Modify the application context's internal bean factory after its standardE
+	 * initialization.
+	 * 修改ApplicationContext内部的BeanFactory，在BeanFactory的标准初始化后
+	 *
+	 * All bean definitions will have been loaded, but no beans will have been instantiated yet.
+	 * 执行时机：所有的bean定义都已经被加载，但还没有bean被初始化（即bean的实例还未创建）
+	 *
+	 * 自己：
+	 * 其实BeanDefinitionRegistryPostProcessor 和 BeanFactoryPostProcessor是一先一后调用的
+	 * 这里之所以说调用时机是所有标准bean定义将要被加载，是因为BeanDefinitionRegistryPostProcessor就是用来注册修改bean定义的后置处理器
+	 * 而等运行完BeanDefinitionRegistryPostProcessor，所有bean定义就成型了，执行BeanFactoryPostProcessor时就是“所有的bean定义都已经被加载”
+	 *
+	 * This allows for overriding or adding properties even to eager-initializing beans.
+	 * 这将允许覆盖或添加bean的属性，即使是eager-initializing beans（立即加载的bean？？）
+	 *
 	 * @param beanFactory the bean factory used by the application context
 	 * @throws org.springframework.beans.BeansException in case of errors
 	 */

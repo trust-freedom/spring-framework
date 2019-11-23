@@ -33,6 +33,8 @@ import org.springframework.util.ObjectUtils;
  * {@code BeanPostProcessor} that detects beans which implement the {@code ApplicationListener}
  * interface. This catches beans that can't reliably be detected by {@code getBeanNamesForType}
  * and related operations which only work against top-level beans.
+ * ApplicationListener探测器
+ * 用于检测实现了ApplicationListener接口的bean，如果是单实例bean，马上把Listener添加到ApplicationContext
  *
  * <p>With standard Java serialization, this post-processor won't get serialized as part of
  * {@code DisposableBeanAdapter} to begin with. However, with alternative serialization
@@ -74,7 +76,7 @@ class ApplicationListenerDetector implements DestructionAwareBeanPostProcessor, 
 			// potentially not detected as a listener by getBeanNamesForType retrieval
 			Boolean flag = this.singletonNames.get(beanName);
 			if (Boolean.TRUE.equals(flag)) {
-				// singleton bean (top-level or inner): register on the fly
+				// singleton bean (top-level or inner): register on the fly 单例bean（顶级或内部）：即时注册
 				this.applicationContext.addApplicationListener((ApplicationListener<?>) bean);
 			}
 			else if (Boolean.FALSE.equals(flag)) {

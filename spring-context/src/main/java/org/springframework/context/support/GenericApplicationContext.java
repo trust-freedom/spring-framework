@@ -102,7 +102,7 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	 * @see #refresh
 	 */
 	public GenericApplicationContext() {
-		this.beanFactory = new DefaultListableBeanFactory();
+		this.beanFactory = new DefaultListableBeanFactory();//通用的ApplicationContext的无参构造会创建一个BeanFactory
 	}
 
 	/**
@@ -250,15 +250,17 @@ public class GenericApplicationContext extends AbstractApplicationContext implem
 	/**
 	 * Do nothing: We hold a single internal BeanFactory and rely on callers
 	 * to register beans through our public methods (or the BeanFactory's).
+	 * 什么都不做：我们持有一个内部BeanFactory并依赖调用者通过我们的公共方法（或BeanFactory）注册bean
+	 * 内部BeanFactory是DefaultListableBeanFactory，在GenericApplicationContext的无参构造创建的
 	 * @see #registerBeanDefinition
 	 */
 	@Override
 	protected final void refreshBeanFactory() throws IllegalStateException {
-		if (!this.refreshed.compareAndSet(false, true)) {
+		if (!this.refreshed.compareAndSet(false, true)) {  //是否还未刷新
 			throw new IllegalStateException(
 					"GenericApplicationContext does not support multiple refresh attempts: just call 'refresh' once");
 		}
-		this.beanFactory.setSerializationId(getId());
+		this.beanFactory.setSerializationId(getId());//给beanFactory设置一个Id（org.springframework.context.annotation.AnnotationConfigApplicationContext@732f95de）
 	}
 
 	@Override

@@ -20,7 +20,7 @@ import org.springframework.beans.BeansException;
 
 /**
  * Subinterface of {@link BeanPostProcessor} that adds a before-destruction callback.
- *
+ * bean的销毁方法的后置处理器
  * <p>The typical usage will be to invoke custom destruction callbacks on
  * specific bean types, matching corresponding initialization callbacks.
  *

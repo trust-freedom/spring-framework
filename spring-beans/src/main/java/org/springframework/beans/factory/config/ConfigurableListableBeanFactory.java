@@ -50,9 +50,12 @@ public interface ConfigurableListableBeanFactory
 
 	/**
 	 * Ignore the given dependency interface for autowiring.
+	 * autowire时忽略给定的依赖关系接口，即指定接口不能通过@Autowaired注入
 	 * <p>This will typically be used by application contexts to register
-	 * dependencies that are resolved in other ways, like BeanFactory through
-	 * BeanFactoryAware or ApplicationContext through ApplicationContextAware.
+	 * dependencies that are resolved in other ways,
+	 * 如果需要应用上下文相关的依赖，通常使用其它方式
+	 * like BeanFactory through BeanFactoryAware or ApplicationContext through ApplicationContextAware.
+	 * 如果需要BeanFactory，就用BeanFactoryAware，如果需要ApplicationContext，就用ApplicationContextAware
 	 * <p>By default, only the BeanFactoryAware interface is ignored.
 	 * For further types to ignore, invoke this method for each type.
 	 * @param ifc the dependency interface to ignore
