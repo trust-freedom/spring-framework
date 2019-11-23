@@ -73,11 +73,13 @@ class ConditionEvaluator {
 
 	/**
 	 * Determine if an item should be skipped based on {@code @Conditional} annotations.
+	 * 根据@Conditional条件判断是否跳过配置类
 	 * @param metadata the meta data
-	 * @param phase the phase of the call
+	 * @param phase the phase of the call  当前所处的配置解析阶段
 	 * @return if the item should be skipped
 	 */
 	public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
+		// 如果没有元数据 或 元数据上没有@Conditional，返回false，不跳过
 		if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
 			return false;
 		}
@@ -90,6 +92,7 @@ class ConditionEvaluator {
 			return shouldSkip(metadata, ConfigurationPhase.REGISTER_BEAN);
 		}
 
+		// 通过metadata获取所有Condition类
 		List<Condition> conditions = new ArrayList<>();
 		for (String[] conditionClasses : getConditionClasses(metadata)) {
 			for (String conditionClass : conditionClasses) {
@@ -98,18 +101,27 @@ class ConditionEvaluator {
 			}
 		}
 
+		// 排序
 		AnnotationAwareOrderComparator.sort(conditions);
 
+		/**
+		 * 遍历所有Condition条件
+		 */
 		for (Condition condition : conditions) {
 			ConfigurationPhase requiredPhase = null;
+			// Condition是否为可以做细粒度控制的ConfigurationCondition的子类
+			// 如果是，可以从中获取到其requiredPhase，即当前条件应该在配置解析的哪个阶段使用
 			if (condition instanceof ConfigurationCondition) {
 				requiredPhase = ((ConfigurationCondition) condition).getConfigurationPhase();
 			}
+			// 1、如果不是ConfigurationCondition，且不满足条件，返回true，跳过
+			// 2、如果是ConfigurationCondition，且当前就是条件可执行的解析阶段，且条件不满足，返回true，跳过
 			if ((requiredPhase == null || requiredPhase == phase) && !condition.matches(this.context, metadata)) {
 				return true;
 			}
 		}
 
+		// 默认不跳过
 		return false;
 	}
 

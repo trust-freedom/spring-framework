@@ -258,19 +258,43 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	/**
 	 * Build and validate a configuration model based on the registry of
 	 * {@link Configuration} classes.
+	 * 根据@Configuration类的注册表构建并验证配置模型
 	 */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
-		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
+		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();  // 待解析的候选配置类集合，初始化为空
+
+		// 从BeanDefinitionRegistry中获取当前所有的BeanDefinition作为挑选配置类的备选
 		String[] candidateNames = registry.getBeanDefinitionNames();
 
+		/**
+		 * candidateNames = {String[8]@3535}
+		 *  0 = "org.springframework.context.annotation.internalConfigurationAnnotationProcessor"    ConfigurationClassPostProcessor-配置类后置处理器，BeanDefinitionRegistryPostProcessor
+		 *  1 = "org.springframework.context.annotation.internalAutowiredAnnotationProcessor"        AutowiredAnnotationBeanPostProcessor-处理@Autowired的BeanPostProcessor
+		 *  2 = "org.springframework.context.annotation.internalRequiredAnnotationProcessor"         RequiredAnnotationBeanPostProcessor-处理@Required的BeanPostProcessor
+		 *  3 = "org.springframework.context.annotation.internalCommonAnnotationProcessor"           CommonAnnotationBeanPostProcessor
+		 *  4 = "org.springframework.context.event.internalEventListenerProcessor"                   EventListenerMethodProcessor
+		 *  5 = "org.springframework.context.event.internalEventListenerFactory"                     DefaultEventListenerFactory
+		 *    上面都在在创建AnnotationConfigServletWebServerApplicationContext上下文时构造方法中的new AnnotatedBeanDefinitionReader()中
+		 *    使用AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry)注册到Spring中的一些基于注解的配置处理器，名称代表的具体类已列举
+		 *  6 = "testApplication"                                                                    SpringBoot启动类，@SpringBootApplication等于@Configuration
+		 *  7 = "org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory"        SharedMetadataReaderFactoryBean
+		 *                                                                                           通过某个ApplicationContextInitializer注入，创建的用于读取Bean元数据的MetadataReaderFactory
+		 */
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
+
+			/**
+			 * 判断BeanDefinition上是否有属性 ConfigurationClassPostProcessor.configurationClass=full 或 ConfigurationClassPostProcessor.configurationClass=lite
+			 * 来判断当前BeanDefinition是否已经被标注为"完全配置类" 或 "简化配置类"
+			 * 在BeanDefinition刚刚被放入Spring容器中时是不会添加这样的属性的，当前这个循环判断就会判断是否为配置类并为BeanDefinition添加属性
+			 */
 			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||
 					ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
+			// 判断BeanDefinition是否为"完全"、"简化"配置类，是的话添加属性，并添加到后续分析列表
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
@@ -282,6 +306,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		}
 
 		// Sort by previously determined @Order value, if applicable
+		// 根据order为候选配置类排序
 		configCandidates.sort((bd1, bd2) -> {
 			int i1 = ConfigurationClassUtils.getOrder(bd1.getBeanDefinition());
 			int i2 = ConfigurationClassUtils.getOrder(bd2.getBeanDefinition());
@@ -289,6 +314,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		});
 
 		// Detect any custom bean name generation strategy supplied through the enclosing application context
+		// 查找一个Bean名称生成策略
 		SingletonBeanRegistry sbr = null;
 		if (registry instanceof SingletonBeanRegistry) {
 			sbr = (SingletonBeanRegistry) registry;
@@ -301,21 +327,37 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			}
 		}
 
+		// 如果environment为空，创建StandardEnvironment
 		if (this.environment == null) {
 			this.environment = new StandardEnvironment();
 		}
 
 		// Parse each @Configuration class
+		// 创建ConfigurationClassParser配置类解析器
 		ConfigurationClassParser parser = new ConfigurationClassParser(
 				this.metadataReaderFactory, this.problemReporter, this.environment,
 				this.resourceLoader, this.componentScanBeanNameGenerator, registry);
 
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
-		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
+		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size()); // 已经解析的配置类
+		/**
+		 * 循环解析配置类，直到候选配置类集合为空
+		 * 每次解析都是
+		 * 1、通过所有候选(种子)配置类解析出通过它能找到的所有配置类（先找到所有配置）
+		 * 2、使用工具ConfigurationClassBeanDefinitionReader注册所发现的配置类中所有的beanDefinition（再挨个加载Bean）
+		 * （如果是SpringBoot应用此时只有一个候选配置类为SpringBoot启动类）
+		 * 3、再查看本次解析后添加的beanDefinition中是否还有配置类，有的话，再次循环解析，直到找不到新的配置类
+		 */
 		do {
+			/**
+			 * 1、解析所有候选(种子)配置类，试图通过它找到其它配置类
+			 */
 			parser.parse(candidates);
+
+			// 校验刚找到的配置类
 			parser.validate();
 
+			// 从分析器parser中获取根据当前候选配置类分析得到的配置类configurationClasses
 			Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
 			configClasses.removeAll(alreadyParsed);
 
@@ -325,10 +367,19 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
+			/**
+			 * 2、使用ConfigurationClassBeanDefinitionReader注册所发现的配置类中所有的beanDefinition
+			 */
 			this.reader.loadBeanDefinitions(configClasses);
 			alreadyParsed.addAll(configClasses);
 
+			// 清空已经解析过的候选配置类
 			candidates.clear();
+
+			/**
+			 * 如果此时的BeanDefinition数量比解析前多了，说明本次有新的BeanDefinition被注册
+			 * 检查新注入的BeanDefinition中是否有配置类，有的话加入candidates候选配置类列表，下个循环继续解析
+			 */
 			if (registry.getBeanDefinitionCount() > candidateNames.length) {
 				String[] newCandidateNames = registry.getBeanDefinitionNames();
 				Set<String> oldCandidateNames = new HashSet<>(Arrays.asList(candidateNames));

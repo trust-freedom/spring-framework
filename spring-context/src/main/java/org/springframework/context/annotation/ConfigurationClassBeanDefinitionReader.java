@@ -122,6 +122,7 @@ class ConfigurationClassBeanDefinitionReader {
 	/**
 	 * Read a particular {@link ConfigurationClass}, registering bean definitions
 	 * for the class itself and all of its {@link Bean} methods.
+	 * 读取特定配置类，将其自身和@Bean方法注册为bean definitions
 	 */
 	private void loadBeanDefinitionsForConfigurationClass(
 			ConfigurationClass configClass, TrackedConditionEvaluator trackedConditionEvaluator) {
@@ -135,14 +136,20 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
+		// 1、将配置类自身注册为beanDefinition
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
+
+		// 2、注册所有@Bean方法为beanDefinition
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
+		// 3、注册由ImportedResources来的beanDefinition
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+
+		// 4、注册由ImportBeanDefinitionRegistrars来的beanDefinition
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 

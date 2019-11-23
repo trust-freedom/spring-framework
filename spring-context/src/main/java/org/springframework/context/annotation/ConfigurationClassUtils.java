@@ -140,6 +140,7 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * 是否为"完全配置类"就看是否有@Configuration注解
 	 * Check the given metadata for a full configuration class candidate
 	 * (i.e. a class annotated with {@code @Configuration}).
 	 * @param metadata the metadata of the annotated class
@@ -151,6 +152,7 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * 不是@Configuration类，但也能通过某个注解向Spring容器中注入Bean的就是"简化配置类"
 	 * Check the given metadata for a lite configuration class candidate
 	 * (e.g. a class annotated with {@code @Component} or just having
 	 * {@code @Import} declarations or {@code @Bean methods}).
@@ -160,11 +162,13 @@ abstract class ConfigurationClassUtils {
 	 */
 	public static boolean isLiteConfigurationCandidate(AnnotationMetadata metadata) {
 		// Do not consider an interface or an annotation...
+		// 不考虑接口和注解，直接返回false
 		if (metadata.isInterface()) {
 			return false;
 		}
 
 		// Any of the typical annotations found?
+		// 有@Component类注解、@ComponentScan、@Import、@ImportResource这些注解的，是简化配置类
 		for (String indicator : candidateIndicators) {
 			if (metadata.isAnnotated(indicator)) {
 				return true;
