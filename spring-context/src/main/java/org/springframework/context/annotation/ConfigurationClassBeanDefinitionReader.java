@@ -61,6 +61,7 @@ import org.springframework.util.StringUtils;
  * <p>This class was modeled after the {@link BeanDefinitionReader} hierarchy, but does
  * not implement/extend any of its artifacts as a set of configuration classes is not a
  * {@link Resource}.
+ * 此类是根据{@link BeanDefinitionReader}层次结构建模的，但未实现/扩展其任何构件，因为一组配置类不是{@link Resource}
  *
  * @author Chris Beams
  * @author Juergen Hoeller
@@ -122,11 +123,16 @@ class ConfigurationClassBeanDefinitionReader {
 	/**
 	 * Read a particular {@link ConfigurationClass}, registering bean definitions
 	 * for the class itself and all of its {@link Bean} methods.
-	 * 读取特定配置类，将其自身和@Bean方法注册为bean definitions
+	 * 读取特定配置类，根据配置信息注册bean definitions
 	 */
 	private void loadBeanDefinitionsForConfigurationClass(
 			ConfigurationClass configClass, TrackedConditionEvaluator trackedConditionEvaluator) {
 
+		/**
+		 * 根据ConfigurationPhase.REGISTER_BEAN阶段条件判断配置类是否需要跳过
+		 * 循环判断配置类以及导入配置类的类，使用ConfigurationPhase.REGISTER_BEAN阶段条件判断是否需要跳过
+		 * 只要配置类或导入配置类的类需要跳过即返回跳过
+		 */
 		if (trackedConditionEvaluator.shouldSkip(configClass)) {
 			String beanName = configClass.getBeanName();
 			if (StringUtils.hasLength(beanName) && this.registry.containsBeanDefinition(beanName)) {
@@ -136,17 +142,18 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
-		// 1、将配置类自身注册为beanDefinition
+		// 1、如果当前配置类是通过内部类导入 或 @Import导入，将配置类自身注册为beanDefinition
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
 
-		// 2、注册所有@Bean方法为beanDefinition
+		// 2、注册配置类所有@Bean方法为beanDefinition
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
-		// 3、注册由ImportedResources来的beanDefinition
+		// 3、注册由@ImportedResources来的beanDefinition
+		// 即通过其它类型Resource的BeanDefinitionReader读取BeanDefinition并注册
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
 
 		// 4、注册由ImportBeanDefinitionRegistrars来的beanDefinition

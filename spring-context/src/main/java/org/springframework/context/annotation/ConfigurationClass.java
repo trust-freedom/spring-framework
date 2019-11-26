@@ -58,11 +58,25 @@ final class ConfigurationClass {
 
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
+	/**
+	 * 由ConfigurationClass导入beanDefinition的方式一：
+	 * @Bean方法
+	 */
 	private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
 
+	/**
+	 * 由ConfigurationClass导入beanDefinition的方式二：
+	 * 配置类上使用@ImportResource注解的类存入此集合
+	 * 用于在ConfigurationClassBeanDefinitionReader#loadBeanDefinitions()时调用，使用BeanDefinitionReader读取Resource中的BeanDefinition并注册
+	 */
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
 
+	/**
+	 * 由ConfigurationClass导入beanDefinition的方式三：
+	 * ImportBeanDefinitionRegistrar集合
+	 * 在ConfigurationClassBeanDefinitionReader#loadBeanDefinitions()时调用，来注册BeanDefinition
+	 */
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 
