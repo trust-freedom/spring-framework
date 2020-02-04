@@ -18,14 +18,17 @@ package org.springframework.http.server.reactive;
 
 import java.net.URI;
 
+import org.junit.jupiter.api.Assumptions;
 import reactor.core.publisher.Mono;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.ClientHttpResponse;
-import org.springframework.http.server.reactive.bootstrap.HttpServer;
 import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.testfixture.http.server.reactive.bootstrap.AbstractHttpHandlerIntegrationTests;
+import org.springframework.web.testfixture.http.server.reactive.bootstrap.HttpServer;
+import org.springframework.web.testfixture.http.server.reactive.bootstrap.ReactorHttpServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -71,6 +74,10 @@ class ErrorHandlerIntegrationTests extends AbstractHttpHandlerIntegrationTests {
 
 	@ParameterizedHttpServerTest // SPR-15560
 	void emptyPathSegments(HttpServer httpServer) throws Exception {
+
+		/* Temporarily necessary for https://github.com/reactor/reactor-netty/issues/948 */
+		Assumptions.assumeFalse(httpServer instanceof ReactorHttpServer);
+
 		startServer(httpServer);
 
 		RestTemplate restTemplate = new RestTemplate();
